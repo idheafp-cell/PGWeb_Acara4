@@ -1,30 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Web Map</title>
+    <title>Leaflet JS</title>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.css"
-      integrity="sha384-P9DABSdtEY/XDbEInD3q+PlL+BjqPCXGcF8EkhtKSfSTr/dS5PBKa9+/PMkW2xsY"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="stylesheet"
-      href="leaflet.mouseCoordinate-master\leaflet.mouseCoordinate-master\dist\leaflet.mousecoordinate.css"
-    />
     <style>
       html,
       body {
-        height: 100%;
-        width: 100%;
         margin: 0;
       }
       #map {
@@ -35,25 +23,18 @@
   </head>
   <body>
     <div id="map"></div>
-
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-
-    <script
-      src="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.js"
-      integrity="sha384-8SqKZR7V8uOetpjjbcNJHvwuHpb074WS0UXjCLhzfJUqYn3B/uWx1WVv5mwRp1mV"
-      crossorigin="anonymous"
-    ></script>
-
-    <script src="leaflet.mouseCoordinate-master\leaflet.mouseCoordinate-master\dist\leaflet.mousecoordinate.js"></script>
     <script>
-      var map = L.map("map").setView([-7.2679703, 112.7190399], 12);
+      // Inisialisasi peta
+      var map = L.map("map").setView([-8.3317779, 123.0303955], 10);
 
       // Tile Layer Base Map
-      var osm = L.tileLayer(
+      var basemap = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
           attribution:
@@ -61,181 +42,168 @@
         }
       );
 
-      var Esri_WorldImagery = L.tileLayer(
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        {
-          attribution:
-            "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
-        }
-      );
-
-      var rupabumiindonesia = L.tileLayer(
-        "https://geoservices.big.go.id/rbi/rest/services/BASEMAP/Rupabumi_Indonesia/MapServer/tile/{z}/{y}/{x}",
-        {
-          attribution: "Badan Informasi Geospasial",
-        }
-      );
-
-      var F4map = L.tileLayer(
-        "https://tile.f4map.com/tiles/f4_2d/{z}/{x}/{y}.png",
-        {
-          maxZoom: 20,
-          attribution: "F4map",
-        }
-      );
-      var Google_Hybrid = L.tileLayer(
-        "https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-        {
-          maxZoom: 20,
-          subdomains: ["mt0", "mt1", "mt2", "mt3"],
-          attribution: "Google",
-        }
-      );
       // Menambahkan basemap ke dalam peta
-      Google_Hybrid.addTo(map);
+      basemap.addTo(map);
 
-      var marker1 = L.marker([-7.2679703, 112.7190399])
-        .addTo(map)
-        .bindPopup("Surabaya")
-        .openPopup();
+      //   Memanggil data GeoJSON dari file toponimi
+      // Define layer groups
+      let toponimi = L.layerGroup();
 
-      var marker2 = L.marker([-7.2634703, 112.7190349])
-        .bindPopup("Ini Popup Kedua")
-        .openPopup();
+      // Load geojson file
 
-      // Circle
-      var circle = L.circle([-7.2679703, 112.7190399], {
-        color: "red", // warna garis
-        opacity: "1", // opacity garis
-        fillColor: "#f03", // warna fill
-        fillOpacity: "0.5", // opacity fill
-        radius: "1000", // radius dalam meter
+      // Mengganti icon
+      fetch("data/toponimi.geojson")
+        .then((response) => response.json())
+        .then((data) => {
+          L.geoJSON(data, {
+            pointToLayer: function (feature, latlng) {
+              return L.marker(latlng, {
+                icon: L.icon({
+                  iconUrl: "img/home_marker.png", // icon marker
+                  iconSize: [30, 30], // ukuran icon
+                  iconAnchor: [16, 32], // posisi icon terhadap titik (point)
+                  popupAnchor: [0, -32], // posisi popup terhadap icon
+                  tooltipAnchor: [10, -20], // posisi tooltip terhadap icon
+                }),
+              });
+            },
+
+            onEachFeature: function (feature, layer) {
+              // variable popup content
+              var popup_content =
+                "Nama: " +
+                feature.properties.TOPONIMI +
+                "<br>" +
+                "Koordinat: " +
+                feature.geometry.coordinates[1] +
+                ", " +
+                feature.geometry.coordinates[0];
+
+              // add popup
+              layer.bindPopup(popup_content);
+
+              // add tooltip
+              layer.bindTooltip(feature.properties.TOPONIMI, {
+                direction: "right",
+              });
+            },
+          }).addTo(toponimi);
+        });
+
+      toponimi.addTo(map);
+
+      // GeoJSON Polyline Jalan
+      map.createPane("panejalan");
+      map.getPane("panejalan").style.zIndex = 401;
+      var jalan = L.geoJSON(null, {
+        pane: 'panejalan',
+        // Style
+        style: function (feature) {
+          return {
+            color: "red",
+            opacity: 1,
+            weight: 2,
+          };
+        },
+        // onEachFeature
+        onEachFeature: function (feature, layer) {
+          layer.on({
+            mouseover: function (e) {
+              jalan.bindTooltip(feature.properties.NAMA_UNSUR, {
+                direction: "auto",
+                sticky: true,
+              });
+            },
+          });
+        },
       });
 
-      // Menambahkan circle ke dalam peta
-      circle.addTo(map);
-
-      // Popup
-      circle.bindPopup("<b>Hallo</b><br>Ini adalah popup circle");
-      circle.openPopup();
-
-      // Tooltip
-      circle.bindTooltip("Ini adalah tooltip circle", {
-        sticky: true,
-      });
-      circle.openTooltip();
-
-      // Polyline
-      var vertexPolyline = [
-        [-7.2823227, 112.7950859],
-        [-7.3805123, 112.7849579],
-        [-7.2458904, 112.7378583],
-        [-7.2837318, 112.724576],
-      ];
-      var polyline = L.polyline(vertexPolyline, {
-        color: "red", // warna garis
-        weight: "3", // ketebalan garis
-        opacity: "1", // opacity garis
+      $.getJSON("data/jalan.geojson", function (data) {
+        jalan.addData(data); // Menambahkan data ke dalam GeoJSON Polyline Jalan
+        map.addLayer(jalan); // Menambahkan GeoJSON Polyline Jalan ke dalam peta
       });
 
-      // Menambahkan polyline ke dalam peta
-      polyline.addTo(map);
+      // GeoJSON Polygon Jumlah Penduduk
+      map.createPane("panejumlahpenduduk");
+      map.getPane("panejumlahpenduduk").style.zIndex = 301;
+      var jumlah_penduduk = L.geoJSON(null, {
+        pane: "panejumlahpenduduk",
+        // Style
+        style: function (feature) {
+          if (feature.properties.Penduduk <= 15000) {
+            return {
+              opacity: 1,
+              color: "black",
+              weight: 1.0,
+              fillOpacity: 0.7,
+              fillColor: "#ffffb2",
+            };
+          }
+          if (
+            feature.properties.Penduduk > 15000 &&
+            feature.properties.Penduduk <= 30000
+          ) {
+            return {
+              opacity: 1,
+              color: "black",
+              weight: 1.0,
+              fillOpacity: 0.7,
+              fillColor: "#fd8d3c",
+            };
+          }
+          if (feature.properties.Penduduk > 30000) {
+            return {
+              opacity: 1,
+              color: "black",
+              weight: 1.0,
+              fillOpacity: 0.7,
+              fillColor: "#bd0026",
+            };
+          }
+        },
+        // onEachFeature
+        onEachFeature: function (feature, layer) {
+          // variable popup content
+          var popup_content =
+            "Kecamatan: " +
+            feature.properties.WADMKC +
+            "<br>" +
+            "Jumlah Penduduk: " +
+            feature.properties.Penduduk;
 
-      // Polygon
-      var vertexPolygon = [
-        [-7.2664942, 112.738266],
-        [-7.265941, 112.7527714],
-        [-7.2956175, 112.735734],
-        [-7.276722, 112.7150059],
-        [-7.248623, 112.7299833],
-      ];
-      var polygon = L.polygon(vertexPolygon, {
-        color: "purple", // warna garis
-        weight: 3, // ketebalan garis
-        opacity: 1, // opacity garis
-        fillColor: "#0f3", // warna fill
-        fillOpacity: 0.5, // opacity fill
+          layer.on({
+            click: function (e) {
+              jumlah_penduduk.bindPopup(popup_content);
+            },
+
+            mouseover: function (e) {
+              jumlah_penduduk.bindTooltip(feature.properties.WADMKC, {
+                direction: "auto",
+                sticky: true,
+              });
+            },
+          });
+        },
       });
 
-      // Menambahkan polygon ke dalam peta
-      polygon.addTo(map);
-
-      // Popup
-      polyline.bindPopup("<b>Hallo</b><br>Ini adalah popup polyline");
-      polyline.openPopup();
+      $.getJSON("data/batas_kecamatan.geojson", function (data) {
+        jumlah_penduduk.addData(data); // Menambahkan data ke dalam GeoJSON Polygon Jumlah Penduduk
+        map.addLayer(jumlah_penduduk); // Menambahkan GeoJSON Polygon Jumlah Penduduk ke dalam peta
+      });
 
       // Control Layer
       var baseMaps = {
-        OpenStreetMap: osm,
-        "Esri World Imagery": Esri_WorldImagery,
-        "Rupa Bumi Indonesia": rupabumiindonesia,
-        "F4 Map": F4map,
-        "Google Hybrid": Google_Hybrid,
+        OpenStreetMap: basemap,
       };
 
       var overlayMaps = {
-        "Marker 1": marker1,
-        "Marker 2": marker2,
-        Circle: circle,
-        Polyline: polyline,
-        Polygon: polygon,
+        Toponimi: toponimi,
+        Jalan: jalan,
+        "Jumlah Penduduk": jumlah_penduduk,
       };
 
       var controllayer = L.control.layers(baseMaps, overlayMaps);
       controllayer.addTo(map);
-
-      // Scale
-        // var scale = L.control.scale();
-        // scale.addTo(map);
-
-      // Scale
-      var scale = L.control.scale({
-        imperial: false,
-        maxWidth: 200,
-      });
-
-      scale.addTo(map);
-
-      // Geolocation
-      map.locate({
-        setView: true,
-        maxZoom: 16,
-      });
-
-      // Fungsi untuk menampilkan lokasi
-      function onLocationFound(e) {
-        var radius = e.accuracy / 2;
-
-        // Menampilkan marker pada lokasi
-        L.marker(e.latlng)
-          .addTo(map)
-          .bindPopup(
-            "Anda berada dalam radius " + radius + " meter dari titik ini"
-          )
-          .openPopup();
-
-        // Menampilkan circle pada lokasi
-        L.circle(e.latlng, radius).addTo(map);
-      }
-
-      map.on("locationfound", onLocationFound);
-
-      // Fungsi untuk menampilkan pesan error
-      function onLocationError(e) {
-        alert(e.message);
-      }
-
-      map.on("locationerror", onLocationError);
-
-      //   Ruler
-      L.control.ruler().addTo(map);
-
-      // Mouse
-      L.control.mouseCoordinate({
-        utm:true,
-        gpsLong:false
-    }).addTo(map);
-
     </script>
   </body>
 </html>
